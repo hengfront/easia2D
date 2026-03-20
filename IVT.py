@@ -34,26 +34,18 @@ g = 9.8
 
 dz = np.abs(zp_tot[:, 15:26, :, :] - zp_tot[:, 14:25, :, :])  # (4, 11, 100, 140)
 
-IVT = np.zeros((4,100,140))
-IVTx = np.zeros((4,100,140))
-IVTy = np.zeros((4,100,140))
+# 700mb 以下的x,y方向ivt
+ivtx = qv_tot[:, 15:26, :, :] * u_tot[:, 15:26, :, :] / g *dz
+ivty = qv_tot[:, 15:26, :, :] * v_tot[:, 15:26, :, :] / g *dz
+
+# axis = 1  => 在高度層方向加總
+ivtx_sum = np.sum(ivtx, axis=1)
+ivty_sum = np.sum(ivty, axis=1)
+IVT = np.sqrt(ivtx_sum**2 + ivty_sum**2)
 
 
-def integrand(u,v,qv,z1,z2):
-    ivtx = qv * u * np.abs(z2 - z1)
-    ivty = qv * v * np.abs(z2 - z1)
-    return ivtx, ivty
 
-for i in range(4):
-    # integrate from 700hPa
-    for j in range(15,26):
-        IVTx[i,:,:] += 1/g * integrand(u_tot[i,j,:,:], v_tot[i,j,:,:], qv_tot[i,j,:,:], zp_tot[i,j-1,:,:], zp_tot[i,j,:,:])[0]
-        IVTy[i,:,:] += 1/g * integrand(u_tot[i,j,:,:], v_tot[i,j,:,:], qv_tot[i,j,:,:], zp_tot[i,j-1,:,:], zp_tot[i,j,:,:])[1]
-
-IVT = np.sqrt(IVTx**2 + IVTy**2)
-
-
-X, Y= np.meshgrid(file_lon,file_lat)
+X, Y= np.meshgrid(lon,lat)
 
 
 
