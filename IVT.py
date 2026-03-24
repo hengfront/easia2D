@@ -5,9 +5,7 @@ import matplotlib.cm as cm
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
-# 建立 Basemap 對象 (東亞區域)
-m = Basemap(projection='cyl', llcrnrlon=100, urcrnrlon=140,
-            llcrnrlat=10, urcrnrlat=40, resolution='l')
+
 
 
 def load_monthly_data(filename):
@@ -52,46 +50,44 @@ X, Y= np.meshgrid(lon,lat)
 
 # Plot
 
-fig, ax = plt.subplots(figsize=(8,6))
+def plot_ivt(month):
+  fig = plt.figure(figsize=(10, 8))
+  ax = plt.axes(projection=ccrs.PlateCarree())  # 使用 PlateCarree 投影
+  ax.set_extent([105, 135, 12, 37], crs=ccrs.PlateCarree())  # 設定地圖範圍
 
-# 建立 Basemap：範圍改成 105–135E, 12–37N
-m = Basemap(projection='cyl',
-            llcrnrlon=105, urcrnrlon=135,
-            llcrnrlat=12, urcrnrlat=37,
-            resolution='l', ax=ax)
+# --- 3. 加入地圖特徵 ---
+  ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
+  ax.add_feature(cfeature.BORDERS, linestyle=':', linewidth=0.8)
+  ax.add_feature(cfeature.OCEAN, facecolor='lightcyan')
+  ax.add_feature(cfeature.LAND, facecolor='whitesmoke')
 
-# 畫海岸線、國界、經緯線
-m.drawcoastlines(linewidth=0.8)
-m.drawcountries(linewidth=0.8)
-m.drawparallels(np.arange(12, 38, 5), labels=[1,0,0,0])
-m.drawmeridians(np.arange(105, 136, 5), labels=[0,0,0,1])
+# 加入經緯度網格線
+  gl = ax.gridlines(draw_labels=True, linestyle='--', alpha=0.5)
+  gl.top_labels = False
+  gl.right_labels = False
 
-# 將經緯度轉為地圖座標
-x, y = m(X, Y)
+# --- 4. 數據填色與向量場 ---
+# 在 Cartopy 中繪圖必須指定 transform=ccrs.PlateCarree()
+  clevs = np.linspace(0, 1000, 11)
+  cf = ax.contourf(lon, lat, IVT[month-6,:,:], levels=clevs, cmap='Blues', 
+                 extend='max', transform=ccrs.PlateCarree())
 
-# 畫 IVT 填色圖
-CS = m.contourf(x, y, IVT[3,:,:],
-                levels=np.linspace(0, 1000, 11),
-                cmap='Blues', extend='max')
+# 畫風場箭頭 (抽稀處理)
+  step = 5
+  ax.quiver(lon[::step], lat[::step], u_tot[month-6,20,::step,::step], v_tot[month-6,20,::step,::step],
+          transform=ccrs.PlateCarree(), scale=300, width=0.002)
 
-# 抽稀風場箭頭
-step = 5
-m.quiver(x[::step, ::step], y[::step, ::step],
-         u_tot[3,20,::step,::step], v_tot[3,20,::step,::step],
-         width=0.002, scale=300)
 
-# 畫出Z500的等高線 (例: 5880m)
-m.contour(x, y, zp_tot[3,11,:,:] / g,
-          levels=[5880], colors='r', linewidths=2)
 
-# 顏色條
-cbar = plt.colorbar(CS, orientation='vertical', pad=0.02)
-cbar.set_label('IVT (kg/m/s)')
+# --- 5. 圖表修飾 ---
+  plt.colorbar(cf, orientation='vertical', pad=0.05, label='IVT (kg/m/s)')
 
-plt.title('2004-09-17\nERA5 / low-level IVT [kg/m/s] / Z500 [5880m]')
-#plt.savefig('2004_SEP.png', dpi=300)
-plt.show()
 
+  plt.title('2004-%02d-17\nERA5 / low-level IVT [kg/m/s] / Z500 [5880m]' % (month))
+  #plt.savefig('2004_%02d_17.png' % (month), dpi=300)
+  plt.show()
+
+plot_ivt(6)  # 6月
 
 
 
