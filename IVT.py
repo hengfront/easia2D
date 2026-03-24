@@ -2,7 +2,8 @@ import netCDF4 as nc
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from mpl_toolkits.basemap import Basemap
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
 # 建立 Basemap 對象 (東亞區域)
 m = Basemap(projection='cyl', llcrnrlon=100, urcrnrlon=140,
